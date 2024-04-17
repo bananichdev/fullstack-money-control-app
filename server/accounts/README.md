@@ -1,0 +1,1 @@
+# Accounts service for server app

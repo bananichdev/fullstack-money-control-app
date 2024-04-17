@@ -1,8 +1,7 @@
 from typing import Annotated
 
-from fastapi import APIRouter, status, Depends
-
 from database.controllers.category import CategoryController
+from fastapi import APIRouter, Depends, status
 from schemas.v1 import Category, CategoryOperationOk
 
 router = APIRouter()

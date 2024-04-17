@@ -1,12 +1,10 @@
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-
 from alembic import context
-
-from settings import DB_DRIVER, DB_USER, DB_PASS, DB_URL, DB_NAME
 from database.models import *
+from sqlalchemy import engine_from_config, pool
+
+from server.common.settings import DB_DRIVER, DB_NAME, DB_PASS, DB_URL, DB_USER
 
 config = context.config
 
@@ -41,7 +39,7 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
-        version_table_schema="server",
+        version_table_schema="products",
         include_schemas=True,
         compare_type=True,
         compare_server_default=True,
@@ -68,7 +66,7 @@ def run_migrations_online() -> None:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
-            version_table_schema="server",
+            version_table_schema="products",
             include_schemas=True,
             compare_type=True,
             compare_server_default=True,

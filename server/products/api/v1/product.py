@@ -1,11 +1,14 @@
+from datetime import date
 from typing import Annotated
 
-from datetime import date
-
-from fastapi import APIRouter, status, Depends
-
 from database.controllers.product import ProductController
-from schemas.v1 import ProductCreatingData, Product, ProductOperationOk, ProductChangingData
+from fastapi import APIRouter, Depends, status
+from schemas.v1 import (
+    Product,
+    ProductChangingData,
+    ProductCreatingData,
+    ProductOperationOk,
+)
 
 router = APIRouter()
 
@@ -13,12 +16,14 @@ router = APIRouter()
 @router.get("/", status_code=status.HTTP_200_OK)
 async def get_product_list_handler(
     controller: Annotated[ProductController, Depends(ProductController)],
-    created_date: date | None,
+    created_date: date | None = None,
     category_id: int | None = None,
     skip: int = 0,
     limit: int = 10,
 ) -> list[Product]:
-    pass
+    return await controller.get_product_list(
+        created_date=created_date, category_id=category_id, skip=skip, limit=limit
+    )
 
 
 @router.get("/{id}", status_code=status.HTTP_200_OK)

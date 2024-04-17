@@ -3,8 +3,6 @@ from fastapi import FastAPI
 from .category import router as category_router
 from .product import router as product_router
 
-from settings import NAME
-
 app = FastAPI()
 
 app.include_router(
@@ -20,4 +18,4 @@ app.include_router(
 
 @app.get("/ping")
 async def ping_handler() -> str:
-    return f"Ping {NAME}"
+    return f"Ping products"

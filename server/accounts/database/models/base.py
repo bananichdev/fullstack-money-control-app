@@ -1,21 +1,10 @@
-from datetime import date
-
-from sqlalchemy import Date, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
 class BaseModel(DeclarativeBase):
-    __table_args__ = {"schema": "products"}
+    __table_args__ = {"schema": "server"}
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-
-    created_date: Mapped[date] = mapped_column(
-        Date(), nullable=False, default=func.current_date()
-    )
-
-    updated_date: Mapped[date] = mapped_column(
-        Date(), nullable=True, onupdate=func.current_date()
-    )
 
     def as_dict(self, exclude: list[str] | None = None) -> dict:
         res_dict = {}

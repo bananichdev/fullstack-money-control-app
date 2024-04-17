@@ -1,12 +1,19 @@
-from sqlalchemy import select, delete, update
-from sqlalchemy.exc import DBAPIError, IntegrityError
-
 from datetime import date
 
-from database.connection import get_db_sessionmaker
 from database.models import ProductModel
-from schemas.v1 import Product, ProductCreatingData, DBAPICallError, ProductOperationOk, ProductNotFound, \
-    ProductChangingData, CategoryNotFound
+from schemas.v1 import (
+    CategoryNotFound,
+    DBAPICallError,
+    Product,
+    ProductChangingData,
+    ProductCreatingData,
+    ProductNotFound,
+    ProductOperationOk,
+)
+from sqlalchemy import and_, delete, select, update
+from sqlalchemy.exc import DBAPIError, IntegrityError
+
+from server.common.settings import get_db_sessionmaker
 
 
 class ProductController:
@@ -27,14 +34,32 @@ class ProductController:
 
         return Product(**product_entity.as_dict())
 
-    async def get_product_list(self, created_date: date | None, category_id: int | None, skip: int, limit: int) -> list[Product]:
+    async def get_product_list(
+        self, created_date: date | None, category_id: int | None, skip: int, limit: int
+    ) -> list[Product]:
         try:
             async with self.db_sessionmaker.begin() as session:
-                product_entity = await session.scalar(
-                    select(ProductModel).where(ProductModel.id == id)
+                query = select(ProductModel)
+                filters = []
+
+                if created_date is not None:
+                    filters.append(ProductModel.created_date == created_date)
+                if category_id is not None:
+                    filters.append(ProductModel.category_id == category_id)
+
+                if filters:
+                    query = query.filter(and_(*filters))
+
+                product_entity_list = await session.scalars(
+                    query.offset(skip).limit(limit)
                 )
         except DBAPIError as e:
             raise DBAPICallError(msg="can not get product list") from e
+
+        return [
+            Product(**product_entity.as_dict())
+            for product_entity in product_entity_list
+        ]
 
     async def create_product(self, product: ProductCreatingData) -> Product:
         try:
@@ -47,7 +72,9 @@ class ProductController:
 
         return Product(**product_entity.as_dict())
 
-    async def update_product(self, id: int, product_changes: ProductChangingData) -> ProductOperationOk:
+    async def update_product(
+        self, id: int, product_changes: ProductChangingData
+    ) -> ProductOperationOk:
         product = await self.get_product_by_id(id=id)
 
         try:

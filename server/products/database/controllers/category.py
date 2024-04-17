@@ -1,11 +1,16 @@
-from sqlalchemy import select, delete, update
+from database.models import CategoryModel
+from schemas.v1 import (
+    Category,
+    CategoryAlreadyExists,
+    CategoryDeleteError,
+    CategoryNotFound,
+    CategoryOperationOk,
+    DBAPICallError,
+)
+from sqlalchemy import delete, select, update
 from sqlalchemy.exc import DBAPIError, IntegrityError
 
-from database.models import CategoryModel
-from database.connection import get_db_sessionmaker
-
-from schemas.v1 import Category, CategoryOperationOk, DBAPICallError, CategoryNotFound, CategoryAlreadyExists, \
-    CategoryDeleteError
+from server.common.settings import get_db_sessionmaker
 
 
 class CategoryController:
@@ -29,13 +34,13 @@ class CategoryController:
     async def get_category_list(self) -> list[Category]:
         try:
             async with self.db_sessionmaker.begin() as session:
-                category_entity_list = await session.scalars(
-                    select(CategoryModel)
-                )
+                category_entity_list = await session.scalars(select(CategoryModel))
         except DBAPIError as e:
             raise DBAPICallError(msg="can not get category list") from e
 
-        category_list = [Category(**category.as_dict()) for category in category_entity_list]
+        category_list = [
+            Category(**category.as_dict()) for category in category_entity_list
+        ]
         if not category_list:
             raise CategoryNotFound()
 

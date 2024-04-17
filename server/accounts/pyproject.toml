@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "products service"
+name = "accounts service"
 version = "0.1.0"
-description = "products service"
+description = "accounts service"
 authors = ["bananichdev <dimitri-05@mail.ru>"]
 readme = "README.md"
 
