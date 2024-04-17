@@ -1,6 +1,8 @@
 from sqlalchemy import select, delete, update
 from sqlalchemy.exc import DBAPIError, IntegrityError
 
+from datetime import date
+
 from database.connection import get_db_sessionmaker
 from database.models import ProductModel
 from schemas.v1 import Product, ProductCreatingData, DBAPICallError, ProductOperationOk, ProductNotFound, \
@@ -25,8 +27,14 @@ class ProductController:
 
         return Product(**product_entity.as_dict())
 
-    async def get_product_list(self) -> list[Product]:
-        pass
+    async def get_product_list(self, created_date: date | None, category_id: int | None, skip: int, limit: int) -> list[Product]:
+        try:
+            async with self.db_sessionmaker.begin() as session:
+                product_entity = await session.scalar(
+                    select(ProductModel).where(ProductModel.id == id)
+                )
+        except DBAPIError as e:
+            raise DBAPICallError(msg="can not get product list") from e
 
     async def create_product(self, product: ProductCreatingData) -> Product:
         try:

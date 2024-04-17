@@ -1,5 +1,7 @@
 from typing import Annotated
 
+from datetime import date
+
 from fastapi import APIRouter, status, Depends
 
 from database.controllers.product import ProductController
@@ -11,6 +13,10 @@ router = APIRouter()
 @router.get("/", status_code=status.HTTP_200_OK)
 async def get_product_list_handler(
     controller: Annotated[ProductController, Depends(ProductController)],
+    created_date: date | None,
+    category_id: int | None = None,
+    skip: int = 0,
+    limit: int = 10,
 ) -> list[Product]:
     pass
 
