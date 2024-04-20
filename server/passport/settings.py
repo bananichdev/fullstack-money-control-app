@@ -21,6 +21,10 @@ DB_FULL_URL = f"{DB_DRIVER}+asyncpg://{DB_USER}:{DB_PASS}@{DB_URL}/{DB_NAME}"
 TEST_DB_FULL_URL = f"{DB_DRIVER}+asyncpg://{DB_USER}:{DB_PASS}@{DB_URL}/{TEST_DB_NAME}"
 ALLOW_ORIGIN = "http://localhost"
 
+ALGORITHM = os.environ.get("ALGORITHM")
+HASH_ROUNDS = os.environ.get("HASH_ROUNDS")
+SECRET_KEY = os.environ.get("SECRET_KEY")
+
 
 @lru_cache
 def get_db_sessionmaker() -> async_sessionmaker:

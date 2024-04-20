@@ -13,4 +13,4 @@ class AccountModel(BaseModel):
 
     balance: Mapped[float] = mapped_column(nullable=False, default=float(0))
 
-    admission_date: Mapped[date] = mapped_column(nullable=False)
+    admission_date: Mapped[date] = mapped_column(nullable=False, default=date.today)
