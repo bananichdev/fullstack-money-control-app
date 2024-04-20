@@ -10,7 +10,7 @@ from schemas.v1 import (
 from sqlalchemy import delete, select, update
 from sqlalchemy.exc import DBAPIError, IntegrityError
 
-from server.common.settings import get_db_sessionmaker
+from settings import get_db_sessionmaker
 
 
 class CategoryController:
@@ -26,9 +26,6 @@ class CategoryController:
         except DBAPIError as e:
             raise DBAPICallError(msg="can not get category") from e
 
-        if category_entity is None:
-            raise CategoryNotFound()
-
         return Category(**category_entity.as_dict()) if category_entity else None
 
     async def get_category_list(self) -> list[Category]:
@@ -41,8 +38,6 @@ class CategoryController:
         category_list = [
             Category(**category.as_dict()) for category in category_entity_list
         ]
-        if not category_list:
-            raise CategoryNotFound()
 
         return category_list
 
@@ -62,6 +57,8 @@ class CategoryController:
 
     async def update_category(self, id: int, new_name: str) -> CategoryOperationOk:
         category = await self.get_category_by_id(id=id)
+        if category is None:
+            raise CategoryNotFound()
 
         try:
             async with self.db_sessionmaker.begin() as session:
@@ -78,6 +75,8 @@ class CategoryController:
 
     async def delete_category(self, id: int) -> CategoryOperationOk:
         category = await self.get_category_by_id(id=id)
+        if category is None:
+            raise CategoryNotFound()
 
         try:
             async with self.db_sessionmaker.begin() as session:

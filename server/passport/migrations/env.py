@@ -40,7 +40,7 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
-        version_table_schema="products",
+        version_table_schema="passport",
         include_schemas=True,
         compare_type=True,
         compare_server_default=True,
@@ -67,7 +67,7 @@ def run_migrations_online() -> None:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
-            version_table_schema="products",
+            version_table_schema="passport",
             include_schemas=True,
             compare_type=True,
             compare_server_default=True,

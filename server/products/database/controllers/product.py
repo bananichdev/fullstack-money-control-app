@@ -13,7 +13,7 @@ from schemas.v1 import (
 from sqlalchemy import and_, delete, select, update
 from sqlalchemy.exc import DBAPIError, IntegrityError
 
-from server.common.settings import get_db_sessionmaker
+from settings import get_db_sessionmaker
 
 
 class ProductController:
@@ -29,10 +29,7 @@ class ProductController:
         except DBAPIError as e:
             raise DBAPICallError(msg="can not get product") from e
 
-        if product_entity is None:
-            raise ProductNotFound()
-
-        return Product(**product_entity.as_dict())
+        return Product(**product_entity.as_dict()) if product_entity else None
 
     async def get_product_list(
         self, created_date: date | None, category_id: int | None, skip: int, limit: int
@@ -66,6 +63,9 @@ class ProductController:
             async with self.db_sessionmaker.begin() as session:
                 product_entity = ProductModel(**product.model_dump())
                 session.add(product_entity)
+        except IntegrityError as e:
+            await session.rollback()
+            raise CategoryNotFound() from e
         except DBAPIError as e:
             await session.rollback()
             raise DBAPICallError(msg="can not create product") from e
@@ -76,12 +76,14 @@ class ProductController:
         self, id: int, product_changes: ProductChangingData
     ) -> ProductOperationOk:
         product = await self.get_product_by_id(id=id)
+        if product is None:
+            raise ProductNotFound()
 
         try:
             async with self.db_sessionmaker.begin() as session:
                 await session.execute(
                     update(ProductModel)
-                    .where(ProductModel.id == product.id)
+                    .where(ProductModel.id == id)
                     .values(**product_changes.model_dump(exclude_none=True))
                 )
         except IntegrityError as e:
@@ -95,11 +97,13 @@ class ProductController:
 
     async def delete_product(self, id: int) -> ProductOperationOk:
         product = await self.get_product_by_id(id=id)
+        if product is None:
+            raise ProductNotFound()
 
         try:
             async with self.db_sessionmaker.begin() as session:
                 await session.execute(
-                    delete(ProductModel).where(ProductModel.id == product.id)
+                    delete(ProductModel).where(ProductModel.id == id)
                 )
         except DBAPIError as e:
             await session.rollback()

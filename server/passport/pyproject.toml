@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "accounts service"
+name = "passport"
 version = "0.1.0"
-description = "accounts service"
+description = "passport service"
 authors = ["bananichdev <dimitri-05@mail.ru>"]
 readme = "README.md"
 
@@ -11,10 +11,13 @@ python = "^3.12"
 fastapi = "^0.110.1"
 uvicorn = "^0.29.0"
 
-alembic = "^1.13.1"
 sqlalchemy = "^2.0.29"
+alembic = "^1.13.1"
 psycopg2-binary = "^2.9.9"
 asyncpg = "^0.29.0"
+
+python-jose = "^3.3.0"
+passlib = "^1.7.4"
 
 python-dotenv = "^1.0.1"
 

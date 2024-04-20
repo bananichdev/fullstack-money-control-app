@@ -30,7 +30,7 @@ async def get_product_list_handler(
 async def get_product_by_id_handler(
     controller: Annotated[ProductController, Depends(ProductController)],
     id: int,
-) -> Product:
+) -> Product | None:
     return await controller.get_product_by_id(id=id)
 
 

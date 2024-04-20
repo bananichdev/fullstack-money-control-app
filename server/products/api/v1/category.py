@@ -18,7 +18,7 @@ async def get_category_list_handler(
 async def get_category_by_id_handler(
     controller: Annotated[CategoryController, Depends(CategoryController)],
     id: int,
-) -> Category:
+) -> Category | None:
     return await controller.get_category_by_id(id=id)
 
 
