@@ -12,6 +12,14 @@ class AuthData(BaseModel):
     password: str
 
 
-class Account(AccountOperationOk, AuthData):
+class AccountReplenishment(BaseModel):
+    amount: float
+
+
+class AccountWriteOff(AccountReplenishment): ...
+
+
+class Account(AccountOperationOk):
+    login: str
     balance: float
-    admission_date: date
+    balance_replenishment_date: date | None

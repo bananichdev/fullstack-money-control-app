@@ -10,10 +10,9 @@ from schemas.v1 import (
     ProductNotFound,
     ProductOperationOk,
 )
+from settings import get_db_sessionmaker
 from sqlalchemy import and_, delete, select, update
 from sqlalchemy.exc import DBAPIError, IntegrityError
-
-from settings import get_db_sessionmaker
 
 
 class ProductController:
@@ -102,9 +101,7 @@ class ProductController:
 
         try:
             async with self.db_sessionmaker.begin() as session:
-                await session.execute(
-                    delete(ProductModel).where(ProductModel.id == id)
-                )
+                await session.execute(delete(ProductModel).where(ProductModel.id == id))
         except DBAPIError as e:
             await session.rollback()
             raise DBAPICallError(msg="can not delete product") from e

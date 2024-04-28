@@ -1,23 +1,28 @@
 from typing import Annotated
 
-from fastapi import APIRouter, status, Depends, Cookie
-from fastapi.responses import JSONResponse
-
 from database.controllers.account import AccountController
-from schemas.v1 import AuthData, AccountOperationOk
-from utils.auth import create_token, AUTH_COOKIE_KEY, check_token
+from fastapi import APIRouter, Cookie, Depends, status
+from fastapi.responses import JSONResponse
+from schemas.v1 import Account, AccountOperationOk, AuthData, RequestAuthDataError
+from utils.auth import AUTH_COOKIE_KEY, check_token, create_token
 
 router = APIRouter()
 
 
 @router.post("/login", status_code=status.HTTP_200_OK)
 async def login_handler(
+    controller: Annotated[AccountController, Depends(AccountController)],
     account: AuthData | None = None,
     access_token: str | None = Cookie(default=None, alias=AUTH_COOKIE_KEY),
-) -> AccountOperationOk:
+) -> AccountOperationOk | Account:
     if access_token is not None:
         id = await check_token(access_token=access_token)
         return AccountOperationOk(id=id)
+
+    if account is not None:
+        return await controller.authenticate(account=account)
+
+    raise RequestAuthDataError()
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
@@ -35,7 +40,7 @@ async def register_handler(
 
 
 @router.post("/logout", status_code=status.HTTP_200_OK)
-async def logout_handler():
+async def logout_handler() -> JSONResponse:
     response = JSONResponse(content=None)
     response.delete_cookie(key=AUTH_COOKIE_KEY, httponly=True)
 

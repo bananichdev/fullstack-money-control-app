@@ -7,10 +7,9 @@ from schemas.v1 import (
     CategoryOperationOk,
     DBAPICallError,
 )
+from settings import get_db_sessionmaker
 from sqlalchemy import delete, select, update
 from sqlalchemy.exc import DBAPIError, IntegrityError
-
-from settings import get_db_sessionmaker
 
 
 class CategoryController:

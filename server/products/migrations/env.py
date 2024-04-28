@@ -1,11 +1,9 @@
 from logging.config import fileConfig
 
 from alembic import context
-from sqlalchemy import engine_from_config, pool
-
-from settings import DB_DRIVER, DB_NAME, DB_PASS, DB_URL, DB_USER
-
 from database.models import BaseModel
+from settings import DB_DRIVER, DB_NAME, DB_PASS, DB_URL, DB_USER
+from sqlalchemy import engine_from_config, pool
 
 config = context.config
 

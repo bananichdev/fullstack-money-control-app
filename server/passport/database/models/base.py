@@ -11,13 +11,6 @@ class BaseModel(DeclarativeBase):
 
         for column in self.__table__.columns:
             if not exclude or column.name not in exclude:
-                if column.name in ["created_date", "updated_date"]:
-                    res_dict[column.name] = (
-                        str(getattr(self, column.name))
-                        if getattr(self, column.name)
-                        else None
-                    )
-                else:
-                    res_dict[column.name] = getattr(self, column.name)
+                res_dict[column.name] = getattr(self, column.name)
 
         return res_dict

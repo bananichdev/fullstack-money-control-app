@@ -15,11 +15,13 @@ DB_USER = os.environ.get("DB_USER")
 DB_PASS = os.environ.get("DB_PASS")
 DB_URL = os.environ.get("DB_URL")
 DB_NAME = os.environ.get("DB_NAME")
-TEST_DB_NAME = os.environ.get("TEST_DB_NAME")
 
 DB_FULL_URL = f"{DB_DRIVER}+asyncpg://{DB_USER}:{DB_PASS}@{DB_URL}/{DB_NAME}"
-TEST_DB_FULL_URL = f"{DB_DRIVER}+asyncpg://{DB_USER}:{DB_PASS}@{DB_URL}/{TEST_DB_NAME}"
 ALLOW_ORIGIN = "http://localhost"
+
+PROXY_INTERNAL_URL = f"{PROXY_URL}/internal"
+PROXY_INTERNAL_V1_URL = f"{PROXY_INTERNAL_URL}/v1"
+PROXY_INTERNAL_V1_PASSPORT_URL = f"{PROXY_INTERNAL_V1_URL}/passport"
 
 
 @lru_cache

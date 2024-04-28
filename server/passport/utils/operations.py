@@ -1,6 +1,6 @@
 from typing import Literal
 
 OperationType = Literal[
-    "пополнение",
-    "списание",
+    "replenishment",
+    "writing_off",
 ]
