@@ -16,7 +16,7 @@ class AccountReplenishment(BaseModel):
     amount: float
 
 
-class AccountWriteOff(AccountReplenishment):
+class AccountWriteOff(AccountOperationOk, AccountReplenishment):
     pass
 
 

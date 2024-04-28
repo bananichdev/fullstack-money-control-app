@@ -19,5 +19,6 @@ class ProductCreatingData(BaseModel):
 
 
 class Product(ProductOperationOk, ProductCreatingData):
+    owner_id: int
     created_date: date
     updated_date: date | None

@@ -39,6 +39,14 @@ class AccountError(HTTPException):
         )
 
 
+class AccountAlreadyExists(AccountError):
+    def __init__(self):
+        super().__init__(
+            detail="Account with the same login already exists",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+
 class AccountNotFound(AccountError):
     def __init__(self):
         super().__init__(

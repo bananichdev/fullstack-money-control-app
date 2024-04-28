@@ -20,7 +20,11 @@ async def login_handler(
         return AccountOperationOk(id=id)
 
     if account is not None:
-        return await controller.authenticate(account=account)
+        account = await controller.authenticate(account=account)
+        access_token = await create_token(id=account.id)
+        response = JSONResponse(content=account.model_dump(mode="json"))
+        response.set_cookie(AUTH_COOKIE_KEY, access_token)
+        return response
 
     raise RequestAuthDataError()
 
@@ -29,11 +33,13 @@ async def login_handler(
 async def register_handler(
     controller: Annotated[AccountController, Depends(AccountController)],
     account: AuthData,
-) -> AccountOperationOk:
-    account_entity = await controller.create_account(account)
-    access_token = await create_token(id=account_entity.id)
+) -> Account:
+    account = await controller.create_account(account)
+    access_token = await create_token(id=account.id)
 
-    response = JSONResponse(content={"id": account_entity.id})
+    response = JSONResponse(
+        content=account.model_dump(mode="json"), status_code=status.HTTP_201_CREATED
+    )
     response.set_cookie(AUTH_COOKIE_KEY, access_token, httponly=True)
 
     return response

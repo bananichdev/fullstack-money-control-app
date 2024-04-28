@@ -9,6 +9,28 @@ class DBAPICallError(HTTPException):
         )
 
 
+class TokenError(HTTPException):
+    def __init__(self, detail, status_code):
+        super().__init__(
+            detail=detail,
+            status_code=status_code,
+        )
+
+
+class TokenIncorrect(TokenError):
+    def __init__(self):
+        super().__init__(
+            detail="Token incorrect", status_code=status.HTTP_403_FORBIDDEN
+        )
+
+
+class TokenNotFound(TokenError):
+    def __init__(self):
+        super().__init__(
+            detail="Token was not found", status_code=status.HTTP_401_UNAUTHORIZED
+        )
+
+
 class CategoryError(HTTPException):
     def __init__(self, detail, status_code):
         super().__init__(
@@ -54,4 +76,20 @@ class ProductNotFound(CategoryError):
         super().__init__(
             detail="Product was not found",
             status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+
+class AccountError(HTTPException):
+    def __init__(self, detail, status_code):
+        super().__init__(
+            detail=detail,
+            status_code=status_code,
+        )
+
+
+class AccountNotEnoughMoney(AccountError):
+    def __init__(self):
+        super().__init__(
+            detail="Not enough money",
+            status_code=status.HTTP_403_FORBIDDEN,
         )

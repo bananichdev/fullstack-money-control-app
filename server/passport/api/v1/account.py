@@ -13,7 +13,8 @@ async def get_account_by_token_handler(
     controller: Annotated[AccountController, Depends(AccountController)],
     id: Annotated[int, Depends(check_token)],
 ) -> Account:
-    return await controller.get_account_by_id(id=id)
+    account = await controller.get_account_by_id(id=id)
+    return Account(**account.as_dict(exclude=["password"]))
 
 
 @router.get("/{id}", status_code=status.HTTP_200_OK)
@@ -21,7 +22,8 @@ async def get_account_by_id_handler(
     controller: Annotated[AccountController, Depends(AccountController)],
     id: int,
 ) -> Account:
-    return await controller.get_account_by_id(id=id)
+    account = await controller.get_account_by_id(id=id)
+    return Account(**account.as_dict(exclude=["password"]))
 
 
 @router.put("/replenishment", status_code=status.HTTP_200_OK)

@@ -3,6 +3,8 @@ from datetime import date
 from database.models import AccountModel, OperationModel
 from schemas.v1 import (
     Account,
+    AccountAlreadyExists,
+    AccountNotEnoughMoney,
     AccountNotFound,
     AccountOperationOk,
     AccountReplenishment,
@@ -10,11 +12,11 @@ from schemas.v1 import (
     AccountWriteOff,
     AccountWrongPassword,
     AuthData,
-    DBAPICallError, AccountNotEnoughMoney,
+    DBAPICallError,
 )
 from settings import get_db_sessionmaker
 from sqlalchemy import select, update
-from sqlalchemy.exc import DBAPIError
+from sqlalchemy.exc import DBAPIError, IntegrityError
 from utils.auth import password_context
 
 
@@ -22,7 +24,7 @@ class AccountController:
     def __init__(self):
         self.db_sessionmaker = get_db_sessionmaker()
 
-    async def get_account_by_id(self, id: int) -> Account:
+    async def get_account_by_id(self, id: int) -> AccountModel:
         try:
             async with self.db_sessionmaker() as session:
                 if (
@@ -34,9 +36,9 @@ class AccountController:
         except DBAPIError as e:
             raise DBAPICallError(msg="can not get account by id") from e
 
-        return Account(**account_entity.as_dict(exclude=["password"]))
+        return account_entity
 
-    async def get_account_by_login(self, login: str) -> Account:
+    async def get_account_by_login(self, login: str) -> AccountModel:
         try:
             async with self.db_sessionmaker.begin() as session:
                 if (
@@ -48,11 +50,7 @@ class AccountController:
         except DBAPIError as e:
             raise DBAPICallError(msg="can not get account by login") from e
 
-        return (
-            Account(**account_entity.as_dict(exclude=["password"]))
-            if account_entity
-            else None
-        )
+        return account_entity
 
     async def create_account(self, account: AuthData) -> Account:
         try:
@@ -60,13 +58,15 @@ class AccountController:
                 password = password_context.hash(account.password)
                 account_entity = AccountModel(login=account.login, password=password)
                 session.add(account_entity)
+        except IntegrityError as e:
+            raise AccountAlreadyExists() from e
         except DBAPIError as e:
             await session.rollback()
             raise DBAPICallError(msg="can not create account") from e
 
         return Account(**account_entity.as_dict(exclude=["password"]))
 
-    async def authenticate(self, account: AuthData) -> AccountOperationOk:
+    async def authenticate(self, account: AuthData) -> (AccountOperationOk, str):
         account_entity = await self.get_account_by_login(account.login)
 
         if not password_context.verify(account.password, account_entity.password):
@@ -78,11 +78,12 @@ class AccountController:
         self, id: int, replenishment: AccountReplenishment
     ) -> AccountOperationOk:
         account_entity = await self.get_account_by_id(id=id)
-        if (
-            account_entity.balance_replenishment_date is not None
-            and account_entity.balance_replenishment.day < date.today().day
-        ):
-            raise AccountReplenishmentForbidden()
+        if account_entity.balance_replenishment_date is not None:
+            if (
+                account_entity.balance_replenishment_date.day < date.today().day
+                or account_entity.balance_replenishment_date.month == date.today().month
+            ):
+                raise AccountReplenishmentForbidden()
 
         try:
             async with self.db_sessionmaker.begin() as session:
@@ -107,10 +108,8 @@ class AccountController:
 
         return AccountOperationOk(id=id)
 
-    async def write_off_balance(
-        self, id: int, write_off: AccountWriteOff
-    ) -> AccountOperationOk:
-        account_entity = await self.get_account_by_id(id=id)
+    async def write_off_balance(self, write_off: AccountWriteOff) -> AccountOperationOk:
+        account_entity = await self.get_account_by_id(id=write_off.id)
         if account_entity.balance - write_off.amount < 0:
             raise AccountNotEnoughMoney()
 
@@ -118,21 +117,19 @@ class AccountController:
             async with self.db_sessionmaker.begin() as session:
                 await session.execute(
                     update(AccountModel)
-                    .where(AccountModel.id == id)
+                    .where(AccountModel.id == write_off.id)
                     .values(
                         balance=AccountModel.balance - write_off.amount,
                     )
                 )
                 operation_entity = OperationModel(
-                    account_id=id,
+                    account_id=write_off.id,
                     type="write_off",
                     amount=write_off.amount,
                 )
                 session.add(operation_entity)
         except DBAPIError as e:
             await session.rollback()
-            raise DBAPICallError(
-                msg="can not update balance"
-            ) from e
+            raise DBAPICallError(msg="can not update balance") from e
 
-        return AccountOperationOk(id=id)
+        return AccountOperationOk(id=write_off.id)

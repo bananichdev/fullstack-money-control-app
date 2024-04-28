@@ -7,7 +7,11 @@ class CategoryOperationOk(BaseModel):
     id: int
 
 
-class Category(CategoryOperationOk):
+class CategoryCreatingData(BaseModel):
     name: str
+
+
+class Category(CategoryOperationOk, CategoryCreatingData):
+    owner_id: int
     created_date: date
     updated_date: date | None

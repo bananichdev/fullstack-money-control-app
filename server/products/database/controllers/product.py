@@ -19,23 +19,35 @@ class ProductController:
     def __init__(self):
         self.db_sessionmaker = get_db_sessionmaker()
 
-    async def get_product_by_id(self, id: int) -> Product:
+    async def get_product_by_id(self, id: int, owner_id: int) -> Product:
         try:
             async with self.db_sessionmaker.begin() as session:
-                product_entity = await session.scalar(
-                    select(ProductModel).where(ProductModel.id == id)
-                )
+                if (
+                    product_entity := await session.scalar(
+                        select(ProductModel).where(
+                            and_(
+                                ProductModel.id == id, ProductModel.owner_id == owner_id
+                            )
+                        )
+                    )
+                ) is None:
+                    raise ProductNotFound()
         except DBAPIError as e:
             raise DBAPICallError(msg="can not get product") from e
 
-        return Product(**product_entity.as_dict()) if product_entity else None
+        return Product(**product_entity.as_dict())
 
     async def get_product_list(
-        self, created_date: date | None, category_id: int | None, skip: int, limit: int
+        self,
+        created_date: date | None,
+        category_id: int | None,
+        skip: int,
+        limit: int,
+        owner_id: int,
     ) -> list[Product]:
         try:
             async with self.db_sessionmaker.begin() as session:
-                query = select(ProductModel)
+                query = select(ProductModel).filter(ProductModel.owner_id == owner_id)
                 filters = []
 
                 if created_date is not None:
@@ -57,10 +69,12 @@ class ProductController:
             for product_entity in product_entity_list
         ]
 
-    async def create_product(self, product: ProductCreatingData) -> Product:
+    async def create_product(
+        self, product: ProductCreatingData, owner_id: int
+    ) -> Product:
         try:
             async with self.db_sessionmaker.begin() as session:
-                product_entity = ProductModel(**product.model_dump())
+                product_entity = ProductModel(**product.model_dump(), owner_id=owner_id)
                 session.add(product_entity)
         except IntegrityError as e:
             await session.rollback()
@@ -72,11 +86,9 @@ class ProductController:
         return Product(**product_entity.as_dict())
 
     async def update_product(
-        self, id: int, product_changes: ProductChangingData
+        self, id: int, product_changes: ProductChangingData, owner_id: int
     ) -> ProductOperationOk:
-        product = await self.get_product_by_id(id=id)
-        if product is None:
-            raise ProductNotFound()
+        product = await self.get_product_by_id(id=id, owner_id=owner_id)
 
         try:
             async with self.db_sessionmaker.begin() as session:
@@ -94,10 +106,8 @@ class ProductController:
 
         return ProductOperationOk(id=product.id)
 
-    async def delete_product(self, id: int) -> ProductOperationOk:
-        product = await self.get_product_by_id(id=id)
-        if product is None:
-            raise ProductNotFound()
+    async def delete_product(self, id: int, owner_id: int) -> ProductOperationOk:
+        product = await self.get_product_by_id(id=id, owner_id=owner_id)
 
         try:
             async with self.db_sessionmaker.begin() as session:

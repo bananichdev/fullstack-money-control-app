@@ -17,6 +17,8 @@ class BaseModel(DeclarativeBase):
         Date(), nullable=True, onupdate=func.current_date()
     )
 
+    owner_id: Mapped[int] = mapped_column(nullable=False, index=True)
+
     def as_dict(self, exclude: list[str] | None = None) -> dict:
         res_dict = {}
 

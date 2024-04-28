@@ -1,0 +1,38 @@
+version: "3"
+
+services:
+    nginx:
+        build: ./nginx
+        container_name: server-nginx
+        restart: always
+        ports:
+            - "8000:8000"
+    passport:
+        build: ./passport
+        container_name: server-passport
+        restart: always
+        ports:
+            - "8002:8000"
+        depends_on:
+            - nginx
+            - database
+        env_file:
+            - .common.env
+            - .private.env
+
+    products:
+        build: ./products
+        container_name: server-products
+        restart: always
+        ports:
+            - "8001:8000"
+        depends_on:
+            - nginx
+            - database
+        env_file:
+            - .common.env
+
+    database:
+        build: ./database
+        container_name: server-database
+        restart: always
