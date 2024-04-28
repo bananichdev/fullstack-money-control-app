@@ -59,6 +59,14 @@ class AccountReplenishmentForbidden(AccountError):
         )
 
 
+class AccountNotEnoughMoney(AccountError):
+    def __init__(self):
+        super().__init__(
+            detail="Not enough money",
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+
 class RequestError(HTTPException):
     def __init__(self, detail, status_code):
         super().__init__(

@@ -14,4 +14,4 @@ async def write_off_handler(
     id: Annotated[int, Depends(check_token)],
     write_off: AccountWriteOff,
 ) -> AccountOperationOk:
-    pass
+    return await controller.write_off_balance(id=id, write_off=write_off)

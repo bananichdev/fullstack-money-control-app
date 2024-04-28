@@ -10,7 +10,7 @@ from schemas.v1 import (
     AccountWriteOff,
     AccountWrongPassword,
     AuthData,
-    DBAPICallError,
+    DBAPICallError, AccountNotEnoughMoney,
 )
 from settings import get_db_sessionmaker
 from sqlalchemy import select, update
@@ -110,4 +110,29 @@ class AccountController:
     async def write_off_balance(
         self, id: int, write_off: AccountWriteOff
     ) -> AccountOperationOk:
-        pass
+        account_entity = await self.get_account_by_id(id=id)
+        if account_entity.balance - write_off.amount < 0:
+            raise AccountNotEnoughMoney()
+
+        try:
+            async with self.db_sessionmaker.begin() as session:
+                await session.execute(
+                    update(AccountModel)
+                    .where(AccountModel.id == id)
+                    .values(
+                        balance=AccountModel.balance - write_off.amount,
+                    )
+                )
+                operation_entity = OperationModel(
+                    account_id=id,
+                    type="write_off",
+                    amount=write_off.amount,
+                )
+                session.add(operation_entity)
+        except DBAPIError as e:
+            await session.rollback()
+            raise DBAPICallError(
+                msg="can not update balance"
+            ) from e
+
+        return AccountOperationOk(id=id)
