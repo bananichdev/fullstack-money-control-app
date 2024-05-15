@@ -12,7 +12,7 @@ from schemas.v1 import (
     AccountWriteOff,
     AccountWrongPassword,
     AuthData,
-    DBAPICallError,
+    DBAPICallError, AccountWriteOffForbidden, AccountRefund, AccountRefundForbidden,
 )
 from settings import get_db_sessionmaker
 from sqlalchemy import select, update
@@ -102,14 +102,14 @@ class AccountController:
                 session.add(operation_entity)
         except DBAPIError as e:
             await session.rollback()
-            raise DBAPICallError(
-                msg="can not update balance and balance_replenishment_date"
-            ) from e
+            raise DBAPICallError(msg="can not update balance and balance_replenishment_date") from e
 
         return AccountOperationOk(id=id)
 
     async def write_off_balance(self, write_off: AccountWriteOff) -> AccountOperationOk:
         account_entity = await self.get_account_by_id(id=write_off.id)
+        if account_entity.balance_replenishment_date is None:
+            raise AccountWriteOffForbidden()
         if account_entity.balance - write_off.amount < 0:
             raise AccountNotEnoughMoney()
 
@@ -133,3 +133,29 @@ class AccountController:
             raise DBAPICallError(msg="can not update balance") from e
 
         return AccountOperationOk(id=write_off.id)
+
+    async def refund_balance(self, refund: AccountRefund) -> AccountOperationOk:
+        account_entity = await self.get_account_by_id(id=refund.id)
+        if account_entity.balance_replenishment_date is None:
+            raise AccountRefundForbidden()
+
+        try:
+            async with self.db_sessionmaker.begin() as session:
+                await session.execute(
+                    update(AccountModel)
+                    .where(AccountModel.id == refund.id)
+                    .values(
+                        balance=AccountModel.balance + refund.amount,
+                    )
+                )
+                operation_entity = OperationModel(
+                    account_id=refund.id,
+                    type="refund",
+                    amount=refund.amount,
+                )
+                session.add(operation_entity)
+        except DBAPIError as e:
+            await session.rollback()
+            raise DBAPICallError(msg="can not update balance") from e
+
+        return AccountOperationOk(id=refund.id)

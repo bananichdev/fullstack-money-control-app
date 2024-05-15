@@ -1,29 +1,17 @@
 [tool.poetry]
-name = "passport"
+name = "homework"
 version = "0.1.0"
-description = "passport service"
+description = ""
 authors = ["bananichdev <dimitri-05@mail.ru>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.12"
-fastapi = "^0.110.1"
-uvicorn = "^0.29.0"
-
-[tool.poetry.group.database.dependencies]
-sqlalchemy = "^2.0.29"
-alembic = "^1.13.1"
-psycopg2-binary = "^2.9.9"
-asyncpg = "^0.29.0"
+pyqt6 = "^6.7.0"
 
 [tool.poetry.group.security.dependencies]
-python-jose = "^3.3.0"
-passlib = "^1.7.4"
 python-dotenv = "^1.0.1"
-
-[tool.poetry.group.lint.dependencies]
-isort = "^5.13.2"
-black = "^24.4.0"
+httpx = "^0.27.0"
 
 
 [tool.isort]

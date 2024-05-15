@@ -1,8 +1,9 @@
 from typing import Annotated
 
 from database.controllers.account import AccountController
+from database.controllers.operation import OperationController
 from fastapi import APIRouter, Depends, status
-from schemas.v1 import Account, AccountOperationOk, AccountReplenishment
+from schemas.v1 import Account, AccountOperationOk, AccountReplenishment, Operation
 from utils.auth import check_token
 
 router = APIRouter()
@@ -15,6 +16,14 @@ async def get_account_by_token_handler(
 ) -> Account:
     account = await controller.get_account_by_id(id=id)
     return Account(**account.as_dict(exclude=["password"]))
+
+
+@router.get("/operation", status_code=status.HTTP_200_OK)
+async def get_operation_list_handler(
+    controller: Annotated[OperationController, Depends(OperationController)],
+    account_id: Annotated[int, Depends(check_token)],
+) -> list[Operation]:
+    return await controller.get_operation_list(account_id=account_id)
 
 
 @router.get("/{id}", status_code=status.HTTP_200_OK)

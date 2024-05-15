@@ -11,8 +11,10 @@ from schemas.v1 import (
     ProductOperationOk,
 )
 from settings import get_db_sessionmaker
-from sqlalchemy import and_, delete, select, update
+from sqlalchemy import and_, delete, desc, select, update
 from sqlalchemy.exc import DBAPIError, IntegrityError
+
+from utils.internal import refund_balance
 
 
 class ProductController:
@@ -25,9 +27,7 @@ class ProductController:
                 if (
                     product_entity := await session.scalar(
                         select(ProductModel).where(
-                            and_(
-                                ProductModel.id == id, ProductModel.owner_id == owner_id
-                            )
+                            and_(ProductModel.id == id, ProductModel.owner_id == owner_id)
                         )
                     )
                 ) is None:
@@ -47,7 +47,11 @@ class ProductController:
     ) -> list[Product]:
         try:
             async with self.db_sessionmaker.begin() as session:
-                query = select(ProductModel).filter(ProductModel.owner_id == owner_id)
+                query = (
+                    select(ProductModel)
+                    .order_by(desc(ProductModel.id))
+                    .filter(ProductModel.owner_id == owner_id)
+                )
                 filters = []
 
                 if created_date is not None:
@@ -58,20 +62,13 @@ class ProductController:
                 if filters:
                     query = query.filter(and_(*filters))
 
-                product_entity_list = await session.scalars(
-                    query.offset(skip).limit(limit)
-                )
+                product_entity_list = await session.scalars(query.offset(skip).limit(limit))
         except DBAPIError as e:
             raise DBAPICallError(msg="can not get product list") from e
 
-        return [
-            Product(**product_entity.as_dict())
-            for product_entity in product_entity_list
-        ]
+        return [Product(**product_entity.as_dict()) for product_entity in product_entity_list]
 
-    async def create_product(
-        self, product: ProductCreatingData, owner_id: int
-    ) -> Product:
+    async def create_product(self, product: ProductCreatingData, owner_id: int) -> Product:
         try:
             async with self.db_sessionmaker.begin() as session:
                 product_entity = ProductModel(**product.model_dump(), owner_id=owner_id)
@@ -108,6 +105,7 @@ class ProductController:
 
     async def delete_product(self, id: int, owner_id: int) -> ProductOperationOk:
         product = await self.get_product_by_id(id=id, owner_id=owner_id)
+        await refund_balance(owner_id=owner_id, amount=product.price)
 
         try:
             async with self.db_sessionmaker.begin() as session:

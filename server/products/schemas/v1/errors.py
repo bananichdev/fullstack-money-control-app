@@ -19,16 +19,12 @@ class TokenError(HTTPException):
 
 class TokenIncorrect(TokenError):
     def __init__(self):
-        super().__init__(
-            detail="Token incorrect", status_code=status.HTTP_403_FORBIDDEN
-        )
+        super().__init__(detail="Token incorrect", status_code=status.HTTP_403_FORBIDDEN)
 
 
 class TokenNotFound(TokenError):
     def __init__(self):
-        super().__init__(
-            detail="Token was not found", status_code=status.HTTP_401_UNAUTHORIZED
-        )
+        super().__init__(detail="Token was not found", status_code=status.HTTP_401_UNAUTHORIZED)
 
 
 class CategoryError(HTTPException):
@@ -48,17 +44,17 @@ class CategoryNotFound(CategoryError):
 
 
 class CategoryAlreadyExists(CategoryError):
-    def __init__(self):
+    def __init__(self, name: str):
         super().__init__(
-            detail="Category already exists",
+            detail=f"Category \"{name}\" already exists",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
 
 class CategoryDeleteError(CategoryError):
-    def __init__(self):
+    def __init__(self, name: str):
         super().__init__(
-            detail="There are still products in the category",
+            detail=f"There are still products in the category \"{name}\"",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
@@ -93,3 +89,16 @@ class AccountNotEnoughMoney(AccountError):
             detail="Not enough money",
             status_code=status.HTTP_403_FORBIDDEN,
         )
+
+
+class AccountWriteOffForbidden(AccountError):
+    def __init__(self):
+        super().__init__(
+            detail="First you need to top up your balance",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+class AccountRefundForbidden(AccountWriteOffForbidden):
+    def __init__(self):
+        super().__init__()

@@ -9,9 +9,7 @@ from settings import ALGORITHM, HASH_ROUNDS, SECRET_KEY
 
 AUTH_COOKIE_KEY = "authorization"
 
-password_context = CryptContext(
-    schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=HASH_ROUNDS
-)
+password_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=HASH_ROUNDS)
 
 cookie_apikey = APIKeyCookie(name=AUTH_COOKIE_KEY, auto_error=False)
 header_apikey = APIKeyHeader(name=AUTH_COOKIE_KEY, auto_error=False)
@@ -32,9 +30,7 @@ async def check_token(access_token: Annotated[str, Depends(cookie_apikey)]) -> i
         raise TokenIncorrect() from e
 
 
-async def check_token_header(
-    access_token: Annotated[str, Depends(header_apikey)]
-) -> int:
+async def check_token_header(access_token: Annotated[str, Depends(header_apikey)]) -> int:
     if access_token is None:
         raise TokenNotFound()
 

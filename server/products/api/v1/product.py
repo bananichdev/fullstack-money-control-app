@@ -3,14 +3,9 @@ from typing import Annotated
 
 from database.controllers.product import ProductController
 from fastapi import APIRouter, Depends, status
-from schemas.v1 import (
-    Product,
-    ProductChangingData,
-    ProductCreatingData,
-    ProductOperationOk,
-)
+from schemas.v1 import Product, ProductChangingData, ProductCreatingData, ProductOperationOk
 from utils.auth import authenticate
-from utils.balance import write_off_balance
+from utils.internal import write_off_balance
 
 router = APIRouter()
 
@@ -48,8 +43,8 @@ async def post_products_handler(
     owner_id: Annotated[int, Depends(authenticate)],
     product: ProductCreatingData,
 ) -> Product:
-    product = await controller.create_product(product=product, owner_id=owner_id)
     await write_off_balance(owner_id=owner_id, amount=product.price)
+    product = await controller.create_product(product=product, owner_id=owner_id)
 
     return product
 

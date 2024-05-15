@@ -4,7 +4,7 @@ from database.models.account import AccountModel
 from database.models.base import BaseModel
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
-from utils.operations import OperationType
+from utils.enums import OperationType
 
 
 class OperationModel(BaseModel):

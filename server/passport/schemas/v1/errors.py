@@ -19,16 +19,12 @@ class TokenError(HTTPException):
 
 class TokenIncorrect(TokenError):
     def __init__(self):
-        super().__init__(
-            detail="Token incorrect", status_code=status.HTTP_403_FORBIDDEN
-        )
+        super().__init__(detail="Token incorrect", status_code=status.HTTP_403_FORBIDDEN)
 
 
 class TokenNotFound(TokenError):
     def __init__(self):
-        super().__init__(
-            detail="Token was not found", status_code=status.HTTP_401_UNAUTHORIZED
-        )
+        super().__init__(detail="Token was not found", status_code=status.HTTP_401_UNAUTHORIZED)
 
 
 class AccountError(HTTPException):
@@ -49,9 +45,7 @@ class AccountAlreadyExists(AccountError):
 
 class AccountNotFound(AccountError):
     def __init__(self):
-        super().__init__(
-            detail="Account does not exists", status_code=status.HTTP_404_NOT_FOUND
-        )
+        super().__init__(detail="Account does not exists", status_code=status.HTTP_404_NOT_FOUND)
 
 
 class AccountWrongPassword(AccountError):
@@ -65,6 +59,19 @@ class AccountReplenishmentForbidden(AccountError):
             detail="You can not top up your balance today",
             status_code=status.HTTP_403_FORBIDDEN,
         )
+
+
+class AccountWriteOffForbidden(AccountError):
+    def __init__(self):
+        super().__init__(
+            detail="First you need to top up your balance",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+class AccountRefundForbidden(AccountWriteOffForbidden):
+    def __init__(self):
+        super().__init__()
 
 
 class AccountNotEnoughMoney(AccountError):

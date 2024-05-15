@@ -20,6 +20,10 @@ class AccountWriteOff(AccountOperationOk, AccountReplenishment):
     pass
 
 
+class AccountRefund(AccountOperationOk, AccountReplenishment):
+    pass
+
+
 class Account(AccountOperationOk):
     login: str
     balance: float

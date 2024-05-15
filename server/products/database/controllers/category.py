@@ -45,15 +45,9 @@ class CategoryController:
         except DBAPIError as e:
             raise DBAPICallError(msg="can not get category list") from e
 
-        category_list = [
-            Category(**category.as_dict()) for category in category_entity_list
-        ]
+        return [Category(**category.as_dict()) for category in category_entity_list]
 
-        return category_list
-
-    async def create_category(
-        self, category: CategoryCreatingData, owner_id: int
-    ) -> Category:
+    async def create_category(self, category: CategoryCreatingData, owner_id: int) -> Category:
         try:
             async with self.db_sessionmaker.begin() as session:
                 category_entity = await session.scalar(
@@ -65,7 +59,7 @@ class CategoryController:
                     )
                 )
                 if category_entity is not None:
-                    raise CategoryAlreadyExists()
+                    raise CategoryAlreadyExists(name=category.name)
 
                 category_entity = CategoryModel(name=category.name, owner_id=owner_id)
                 session.add(category_entity)
@@ -75,9 +69,7 @@ class CategoryController:
 
         return Category(**category_entity.as_dict())
 
-    async def update_category(
-        self, id: int, new_name: str, owner_id: int
-    ) -> CategoryOperationOk:
+    async def update_category(self, id: int, new_name: str, owner_id: int) -> CategoryOperationOk:
         category = await self.get_category_by_id(id=id, owner_id=owner_id)
 
         try:
@@ -98,12 +90,10 @@ class CategoryController:
 
         try:
             async with self.db_sessionmaker.begin() as session:
-                await session.execute(
-                    delete(CategoryModel).where(CategoryModel.id == category.id)
-                )
+                await session.execute(delete(CategoryModel).where(CategoryModel.id == category.id))
         except IntegrityError as e:
             await session.rollback()
-            raise CategoryDeleteError() from e
+            raise CategoryDeleteError(name=category.name) from e
         except DBAPIError as e:
             await session.rollback()
             raise DBAPICallError(msg="can not delete category") from e
