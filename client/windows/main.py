@@ -4,6 +4,7 @@ from httpx import Client
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import (
+    QComboBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -13,18 +14,21 @@ from PyQt6.QtWidgets import (
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
-    QWidget, QComboBox,
+    QWidget,
 )
 from settings import BASE_API_V1_URL
 from utils.internal import get_category_id_by_name, get_category_name_by_id
 from workers.main import (
     AccountInfoWorker,
     DeleteCategoryWorker,
+    DeletePurchaseWorker,
     GetCategoriesWorker,
     GetOperationsWorker,
+    GetPurchasesWorker,
     PostCategoryWorker,
+    PostPurchaseWorker,
     PutBalanceWorker,
-    PutCategoryWorker, GetPurchasesWorker, PostPurchaseWorker, DeletePurchaseWorker,
+    PutCategoryWorker,
 )
 
 
@@ -266,8 +270,16 @@ class MainWindow(QMainWindow):
         for row, purchase in enumerate(data):
             self.purchases_table.setItem(row, 0, QTableWidgetItem(purchase["name"]))
             self.purchases_table.setItem(row, 1, QTableWidgetItem(str(purchase["price"])))
-            self.purchases_table.setItem(row, 2, QTableWidgetItem(get_category_name_by_id(id=purchase["category_id"], data=self.categories)))
-            self.purchases_table.setItem(row, 3, QTableWidgetItem(".".join(purchase["created_date"].split("-")[::-1])))
+            self.purchases_table.setItem(
+                row,
+                2,
+                QTableWidgetItem(
+                    get_category_name_by_id(id=purchase["category_id"], data=self.categories)
+                ),
+            )
+            self.purchases_table.setItem(
+                row, 3, QTableWidgetItem(".".join(purchase["created_date"].split("-")[::-1]))
+            )
             delete_button = QPushButton("Delete purchase")
             delete_button.clicked.connect(lambda ch, d=purchase: self.delete_purchase(data=d))
             delete_button.setStyleSheet("color: rgb(255, 255, 255); background: rgb(100, 0, 0)")
@@ -315,7 +327,12 @@ class MainWindow(QMainWindow):
             self.error_handler(f"Price must be greater than zero")
             return
 
-        worker = PostPurchaseWorker(self.client, name, price, get_category_id_by_name(self.category_purchase_box.currentText(), self.categories))
+        worker = PostPurchaseWorker(
+            self.client,
+            name,
+            price,
+            get_category_id_by_name(self.category_purchase_box.currentText(), self.categories),
+        )
         worker.success.connect(self.my_purchases)
         worker.error.connect(self.error_handler)
         worker.start()

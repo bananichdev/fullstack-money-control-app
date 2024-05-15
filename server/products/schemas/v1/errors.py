@@ -46,7 +46,7 @@ class CategoryNotFound(CategoryError):
 class CategoryAlreadyExists(CategoryError):
     def __init__(self, name: str):
         super().__init__(
-            detail=f"Category \"{name}\" already exists",
+            detail=f'Category "{name}" already exists',
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
@@ -54,7 +54,7 @@ class CategoryAlreadyExists(CategoryError):
 class CategoryDeleteError(CategoryError):
     def __init__(self, name: str):
         super().__init__(
-            detail=f"There are still products in the category \"{name}\"",
+            detail=f'There are still products in the category "{name}"',
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 

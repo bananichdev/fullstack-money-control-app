@@ -13,7 +13,6 @@ from schemas.v1 import (
 from settings import get_db_sessionmaker
 from sqlalchemy import and_, delete, desc, select, update
 from sqlalchemy.exc import DBAPIError, IntegrityError
-
 from utils.internal import refund_balance
 
 

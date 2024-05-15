@@ -145,7 +145,7 @@ class PostPurchaseWorker(BaseWorker):
                 "name": self.name,
                 "price": self.price,
                 "category_id": self.category_id,
-            }
+            },
         )
         response_json = response.json()
         if response.status_code != 201:
