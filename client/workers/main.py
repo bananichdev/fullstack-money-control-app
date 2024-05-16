@@ -118,11 +118,17 @@ class PutBalanceWorker(BaseWorker):
 
 
 class GetPurchasesWorker(GetCategoriesWorker):
-    def __init__(self, client: Client):
+    def __init__(self, client: Client, filters: dict | None):
         super().__init__(client)
+        self.filters = filters
 
     def run(self):
-        response = self.client.get(url="/products/product/?limit=1000")
+        if not self.filters:
+            response = self.client.get(url="/products/product/", params={"limit": 1000})
+        else:
+            response = self.client.get(
+                url="/products/product/", params={"limit": 1000} | self.filters
+            )
         response_json = response.json()
         if response.status_code != 200:
             self.error.emit(response_json["detail"])

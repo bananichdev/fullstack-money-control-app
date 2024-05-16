@@ -13,6 +13,4 @@ class AccountModel(BaseModel):
 
     balance: Mapped[float] = mapped_column(nullable=False, default=float(0))
 
-    balance_replenishment_date: Mapped[date] = mapped_column(
-        nullable=True, default=None, onupdate=date.today
-    )
+    balance_replenishment_date: Mapped[date] = mapped_column(nullable=True, default=None)

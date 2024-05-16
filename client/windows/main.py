@@ -1,9 +1,10 @@
 from datetime import date
 
 from httpx import Client
-from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtCore import QDate, Qt, pyqtSignal
 from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import (
+    QCalendarWidget,
     QComboBox,
     QHBoxLayout,
     QLabel,
@@ -41,25 +42,24 @@ class MainWindow(QMainWindow):
         self.client = Client(base_url=BASE_API_V1_URL, cookies={"authorization": authorization})
         self.categories = []
 
-        self.setWindowTitle("Control your money app")
-        self.setGeometry(700, 400, 800, 400)
+        worker = GetCategoriesWorker(self.client)
+        worker.success.connect(self.get_categories)
+        worker.error.connect(self.error_handler)
+        worker.start()
 
-        self.account_widget = QWidget()
-        account_layout = QVBoxLayout()
+        self.setWindowTitle("Control your money app")
+        self.setGeometry(600, 300, 800, 600)
+
+        self.start_widget = QWidget()
+        start_layout = QVBoxLayout()
         account_label = QLabel("Account:")
         login_button = QPushButton(login)
         login_button.clicked.connect(self.account_info)
-        account_layout.addWidget(account_label)
-        account_layout.addWidget(login_button)
-        self.account_widget.setLayout(account_layout)
-
-        self.operations_widget = QWidget()
-        operations_layout = QVBoxLayout()
+        start_layout.addWidget(account_label)
+        start_layout.addWidget(login_button)
         operations_label = QLabel("Operations:")
-        operations_layout.addWidget(operations_label)
-        self.operations_widget.setLayout(operations_layout)
-
-        self.navigation_widget = QWidget()
+        start_layout.addWidget(operations_label)
+        self.start_widget.setLayout(start_layout)
         navigation_layout = QHBoxLayout()
         my_purchases_button = QPushButton("My purchases")
         my_purchases_button.clicked.connect(self.my_purchases)
@@ -70,21 +70,51 @@ class MainWindow(QMainWindow):
         navigation_layout.addWidget(my_purchases_button)
         navigation_layout.addWidget(my_categories_button)
         navigation_layout.addWidget(my_wallet_button)
-        self.navigation_widget.setLayout(navigation_layout)
+        start_layout.addLayout(navigation_layout)
+        start_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         self.add_purchase_widget = QWidget()
         add_purchase_layout = QVBoxLayout()
         add_purchase_button = QPushButton("Add purchase")
+        add_purchase_button.setStyleSheet("background: #F75E25;")
         add_purchase_button.clicked.connect(self.post_purchase)
+        filters_layout = QVBoxLayout()
+        category_label = QLabel("Category:")
+        date_label = QLabel("Date:")
+        filters_layout.addWidget(category_label)
+        self.category_filter_box = QComboBox()
+        self.category_filter_box.addItem("Any")
+        for category in self.categories:
+            self.category_filter_box.addItem(category["name"])
+        filters_layout.addWidget(self.category_filter_box)
+        filters_layout.addWidget(date_label)
+        self.date_filter_button = QPushButton("Show Calendar")
+        self.date_filter_button.clicked.connect(self.show_calendar)
+        filters_layout.addWidget(self.date_filter_button)
+        self.date_filter_edit = QLineEdit()
+        self.date_filter_edit.setPlaceholderText("Date (Format: DD.MM.YYYY)")
+        filters_layout.addWidget(self.date_filter_edit)
+
+        self.calendar = QCalendarWidget()
+        self.calendar.setFixedSize(300, 200)
+        filters_layout.addWidget(self.calendar)
+        self.calendar.hide()
+        self.calendar.clicked.connect(self.select_date)
+
+        apply_button = QPushButton("Apply")
+        apply_button.setStyleSheet("background: #F75E25;")
+        apply_button.clicked.connect(self.apply_filters)
+        filters_layout.addWidget(apply_button)
         self.purchases_table = QTableWidget()
         self.purchases_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.purchases_table.setColumnCount(5)
         for column in range(0, 5):
-            self.purchases_table.setColumnWidth(column, 145)
+            self.purchases_table.setColumnWidth(column, 147)
         self.purchases_table.setHorizontalHeaderLabels(
             ["Name", "Price", "Category", "Date", "Delete"]
         )
         add_purchase_layout.addWidget(add_purchase_button)
+        add_purchase_layout.addLayout(filters_layout)
         add_purchase_layout.addWidget(self.purchases_table)
         self.add_purchase_widget.setLayout(add_purchase_layout)
         self.add_purchase_widget.hide()
@@ -98,6 +128,7 @@ class MainWindow(QMainWindow):
         category_purchase_label = QLabel("Category:")
         self.category_purchase_box = QComboBox()
         post_purchase_button = QPushButton("Submit")
+        post_purchase_button.setStyleSheet("background: #F75E25;")
         post_purchase_button.clicked.connect(self.submit_post_purchase)
         post_purchase_layout.addWidget(self.name_purchase_edit)
         post_purchase_layout.addWidget(self.price_purchase_edit)
@@ -111,6 +142,7 @@ class MainWindow(QMainWindow):
         self.add_category_widget = QWidget()
         add_category_layout = QVBoxLayout()
         add_category_button = QPushButton("Add category")
+        add_category_button.setStyleSheet("background: #F75E25;")
         add_category_button.clicked.connect(self.post_category)
         self.categories_table = QTableWidget()
         self.categories_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
@@ -129,6 +161,7 @@ class MainWindow(QMainWindow):
         self.name_category_edit = QLineEdit()
         self.name_category_edit.setPlaceholderText("Category name")
         post_category_button = QPushButton("Submit")
+        post_category_button.setStyleSheet("background: #F75E25;")
         post_category_button.clicked.connect(self.submit_post_category)
         post_category_layout.addWidget(self.name_category_edit)
         post_category_layout.addWidget(post_category_button)
@@ -142,6 +175,7 @@ class MainWindow(QMainWindow):
         self.name_put_category_edit = QLineEdit()
         self.name_put_category_edit.setPlaceholderText("New category name")
         put_category_button = QPushButton("Submit")
+        put_category_button.setStyleSheet("background: #F75E25;")
         put_category_button.clicked.connect(self.submit_put_category)
         put_category_layout.addWidget(self.name_put_category_name)
         put_category_layout.addWidget(self.name_put_category_edit)
@@ -152,11 +186,12 @@ class MainWindow(QMainWindow):
         self.top_up_balance_widget = QWidget()
         top_up_balance_layout = QVBoxLayout()
         top_up_balance_button = QPushButton("Top up balance")
+        top_up_balance_button.setStyleSheet("background: #F75E25;")
         top_up_balance_button.clicked.connect(self.top_up_balance)
         self.operations_table = QTableWidget()
         self.operations_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.operations_table.setColumnCount(3)
-        self.operations_table.setColumnWidth(0, 335)
+        self.operations_table.setColumnWidth(0, 326)
         self.operations_table.setColumnWidth(1, 200)
         self.operations_table.setColumnWidth(2, 200)
         self.operations_table.setHorizontalHeaderLabels(["Type", "Amount", "Date"])
@@ -170,6 +205,7 @@ class MainWindow(QMainWindow):
         self.amount_edit = QLineEdit()
         self.amount_edit.setPlaceholderText("Amount")
         put_balance_button = QPushButton("Submit")
+        put_balance_button.setStyleSheet("background: #F75E25;")
         put_balance_button.clicked.connect(self.submit_put_balance)
         put_balance_layout.addWidget(self.amount_edit)
         put_balance_layout.addWidget(put_balance_button)
@@ -177,9 +213,7 @@ class MainWindow(QMainWindow):
         self.put_balance_widget.hide()
 
         main_layout = QVBoxLayout()
-        main_layout.addWidget(self.account_widget)
-        main_layout.addWidget(self.operations_widget)
-        main_layout.addWidget(self.navigation_widget)
+        main_layout.addWidget(self.start_widget)
         main_layout.addWidget(self.add_purchase_widget)
         main_layout.addWidget(self.add_category_widget)
         main_layout.addWidget(self.post_category_widget)
@@ -190,11 +224,6 @@ class MainWindow(QMainWindow):
         main_widget = QWidget()
         main_widget.setLayout(main_layout)
         self.setCentralWidget(main_widget)
-
-        worker = GetCategoriesWorker(self.client)
-        worker.success.connect(self.get_categories)
-        worker.error.connect(self.error_handler)
-        worker.start()
 
         self.create_menu()
 
@@ -245,6 +274,8 @@ class MainWindow(QMainWindow):
         QMessageBox.about(self, "Account info", result)
 
     def hide_all(self):
+        self.calendar.hide()
+        self.date_filter_edit.clear()
         self.add_category_widget.hide()
         self.post_category_widget.hide()
         self.put_category_widget.hide()
@@ -253,14 +284,18 @@ class MainWindow(QMainWindow):
         self.post_purchase_widget.hide()
         self.add_purchase_widget.hide()
 
-    def my_purchases(self):
+    def my_purchases(self, filters: dict | None = None):
         worker = GetCategoriesWorker(self.client)
         worker.success.connect(self.get_categories)
         worker.error.connect(self.error_handler)
         worker.start()
         self.hide_all()
+        self.category_filter_box.clear()
+        self.category_filter_box.addItem("Any")
+        for category in self.categories:
+            self.category_filter_box.addItem(category["name"])
         self.add_purchase_widget.show()
-        worker = GetPurchasesWorker(self.client)
+        worker = GetPurchasesWorker(self.client, filters=filters)
         worker.success.connect(self.success_get_purchases_handler)
         worker.error.connect(self.error_handler)
         worker.start()
@@ -282,8 +317,31 @@ class MainWindow(QMainWindow):
             )
             delete_button = QPushButton("Delete purchase")
             delete_button.clicked.connect(lambda ch, d=purchase: self.delete_purchase(data=d))
-            delete_button.setStyleSheet("color: rgb(255, 255, 255); background: rgb(100, 0, 0)")
+            delete_button.setStyleSheet("background: rgb(100, 0, 0)")
             self.purchases_table.setCellWidget(row, 4, delete_button)
+
+    def show_calendar(self):
+        self.calendar.show()
+
+    def select_date(self, selected_date: QDate):
+        selected_date = selected_date.toString("yyyy-MM-dd")
+        self.date_filter_edit.setText(".".join(selected_date.split("-")[::-1]))
+
+    def apply_filters(self):
+        filters = {}
+        category = self.category_filter_box.currentText()
+        if category != "Any":
+            filters["category_id"] = get_category_id_by_name(category, self.categories)
+        selected_date = "-".join(self.date_filter_edit.text().split(".")[::-1])
+        if selected_date:
+            try:
+                date.fromisoformat(selected_date)
+                filters["created_date"] = selected_date
+            except ValueError:
+                self.error_handler("Invalid date")
+                return
+        self.calendar.hide()
+        self.my_purchases(filters=filters if filters else None)
 
     def get_categories(self, data: list):
         self.categories = data
@@ -357,11 +415,11 @@ class MainWindow(QMainWindow):
         for row, category in enumerate(data):
             self.categories_table.setItem(row, 0, QTableWidgetItem(category["name"]))
             edit_button = QPushButton("Edit name")
-            edit_button.setStyleSheet("color: rgb(255, 255, 255); background: rgb(205, 164, 52)")
+            edit_button.setStyleSheet("background: #F75E25")
             edit_button.clicked.connect(lambda ch, d=category: self.put_category(data=d))
             delete_button = QPushButton("Delete category")
             delete_button.clicked.connect(lambda ch, d=category: self.delete_category(data=d))
-            delete_button.setStyleSheet("color: rgb(255, 255, 255); background: rgb(100, 0, 0)")
+            delete_button.setStyleSheet("background: rgb(100, 0, 0)")
             self.categories_table.setCellWidget(row, 1, edit_button)
             self.categories_table.setCellWidget(row, 2, delete_button)
 

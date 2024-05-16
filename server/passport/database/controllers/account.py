@@ -95,6 +95,7 @@ class AccountController:
                     .where(AccountModel.id == id)
                     .values(
                         balance=AccountModel.balance + replenishment.amount,
+                        balance_replenishment_date=date.today(),
                     )
                 )
                 operation_entity = OperationModel(
