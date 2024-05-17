@@ -1,3 +1,4 @@
+import os
 import sys
 
 from cache.account import CacheController
@@ -6,6 +7,7 @@ from windows.auth import AuthWindow
 
 
 def main():
+    os.chdir(os.path.dirname(__file__))
     cache = CacheController()
     data = cache.read_cache()
     app = QApplication(sys.argv)

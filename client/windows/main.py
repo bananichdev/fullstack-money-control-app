@@ -391,7 +391,7 @@ class MainWindow(QMainWindow):
             price,
             get_category_id_by_name(self.category_purchase_box.currentText(), self.categories),
         )
-        worker.success.connect(self.my_purchases)
+        worker.success.connect(lambda ch, filters=None: self.my_purchases(filters=filters))
         worker.error.connect(self.error_handler)
         worker.start()
 
