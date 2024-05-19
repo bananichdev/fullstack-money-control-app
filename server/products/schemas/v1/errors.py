@@ -67,7 +67,7 @@ class ProductError(HTTPException):
         )
 
 
-class ProductNotFound(CategoryError):
+class ProductNotFound(ProductError):
     def __init__(self):
         super().__init__(
             detail="Product was not found",
